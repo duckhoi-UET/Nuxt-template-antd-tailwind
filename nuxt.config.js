@@ -5,6 +5,8 @@ const isProduction = process.env.NODE_ENV === 'production';
 export default {
     dev: !isProduction,
 
+    ssr: false,
+
     // When SPA
     loading: '@/components/shared/Loading.vue',
 
@@ -15,7 +17,7 @@ export default {
     },
 
     head: {
-        title: 'nuxt-boilerplate',
+        title: 'ezi-hotel',
         htmlAttrs: {
             lang: 'en',
         },
@@ -32,12 +34,16 @@ export default {
 
     css: [
         '@/assets/main.scss',
+        '@/assets/ant/main.less',
         '@fortawesome/fontawesome-free/css/all.css',
     ],
 
     plugins: [
-        '@/plugins/element-ui',
+        '@/plugins/api',
+        { src: '@/plugins/axios', mode: 'client' },
+        '@/plugins/ant-design',
         '@/plugins/filters',
+        '@/plugins/global-components',
     ],
 
     robots: [
@@ -64,6 +70,7 @@ export default {
     },
 
     buildModules: [
+        '@nuxt/postcss8',
         '@nuxtjs/eslint-module',
         '@nuxtjs/fontawesome',
         '@nuxtjs/tailwindcss',
@@ -71,14 +78,83 @@ export default {
     ],
 
     modules: [
+        '@nuxtjs/axios',
+        '@nuxtjs/auth-next',
     ],
 
+    axios: {
+        baseURL: process.env.API_HOST,
+    },
+
+    auth: {
+        strategies: {
+            local: {
+                token: {
+                    property: 'data.sid',
+                    global: true,
+                    required: true,
+                    name: 'auth',
+                    maxAge: 60 * 60 * 24 * 30,
+                    type: false,
+                },
+                autoLogout: false,
+                user: {
+                    property: 'data.account',
+                    autoFetch: true,
+                },
+                endpoints: {
+                    login: {
+                        url: `${process.env.API_HOST}/user/login`,
+                        method: 'POST',
+                    },
+                    logout: {
+                        url: `${process.env.API_HOST}/user/logout`,
+                        method: 'GET',
+                    },
+                    user: {
+                        url: `${process.env.API_HOST}/user/get_profile`,
+                        method: 'POST',
+                    },
+                },
+                redirect: {
+                    login: '/login',
+                    logout: '/',
+                    callback: '/login',
+                    home: '/',
+                },
+            },
+        },
+    },
+
+    router: {
+        middleware: ['auth'],
+    },
+
     build: {
-        transpile: [/^element-ui/],
         postcss: {
             plugins: {
                 tailwindcss: 'tailwind.config.js',
+                autoprefixer: {},
+                ...(process.env.APP_ENV === 'production' ? { cssnano: {} } : {}),
             },
+        },
+        loaders: {
+            less: {
+                javascriptEnabled: true,
+            },
+        },
+        babel: {
+            plugins: [
+                [
+                    'import',
+                    {
+                        libraryName: 'ant-design-vue',
+                        libraryDirectory: 'es',
+                        style: true,
+                    },
+                    'ant-design-vue',
+                ],
+            ],
         },
     },
 
@@ -89,8 +165,7 @@ export default {
     },
 
     env: {
-        apiHost: process.env.API_HOST || 'localhost',
-        apiPath: process.env.API_PATH || '/api',
-        appUrl: process.env.APP_URL || 'http://localhost:3000',
+        API_HOST: process.env.API_HOST || 'localhost',
+        RSA_PUBLIC_KEY: process.env.RSA_PUBLIC_KEY,
     },
 };
