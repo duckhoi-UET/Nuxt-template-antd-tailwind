@@ -1,5 +1,5 @@
 <template>
-    <div class="flex justify-between bg-[#f8f8f8] min-h-screen">
+    <div class="flex justify-between bg-[#f8f8f8] h-screen">
         <div class="hidden md:block">
             <TheSidebar />
         </div>
